@@ -7,10 +7,12 @@ import {
   InputNumber,
   Table,
 } from "antd";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import type { Factor } from "./consts";
 import { CalculationResultColumns, FactorsResultColumns } from "./consts";
 import { Header } from "./header";
+import { Calculate } from "./utils";
+import html2pdf from "html2pdf.js";
 
 export const Calculation: React.FC<{
   ecologicalFactors: Factor[];
@@ -27,8 +29,7 @@ export const Calculation: React.FC<{
     Td: number;
     DT: number;
 
-    TdList?: number[];
-    DTList?: number[];
+    dayParametersList: { Td: number | null; DT: number | null }[];
 
     ecologicalFactorsList: number[];
     managementFactorsList: number[];
@@ -38,6 +39,16 @@ export const Calculation: React.FC<{
   const [GS, setGSValue] = useState<number | null>();
   const [Tl, setTlValue] = useState<number | null>(1);
   const [Tseason, setTseasonValue] = useState<number | null>();
+
+  const [dayParametersList, setDayParametersList] = useState<
+    { Td: number | undefined; DT: number | undefined }[]
+  >(
+    Array.from({ length: Tl ? Tl : 0 }, () => ({
+      Td: undefined,
+      DT: undefined,
+    }))
+  );
+
   const [ecologicalFactorsList, setEcologicalFactorsList] = useState<number[]>(
     []
   );
@@ -60,15 +71,31 @@ export const Calculation: React.FC<{
       setEcologicalFactorsList(form.getFieldValue("ecologicalFactorsList"));
       setManagementFactorsList(form.getFieldValue("managementFactorsList"));
 
-      setBCCValue(1);
-      setPCCValue(2);
-      setRCCValue(3);
+      const result = Calculate(
+        Tday,
+        GS,
+        Tl,
+        Tseason,
+        Td,
+        DT,
+        ecologicalFactorsList.length,
+        managementFactorsList.length
+      );
+
+      setBCCValue(result?.resultBCC);
+      setPCCValue(result?.resultPCC);
+      setRCCValue(result?.resultRCC);
 
       setIsResultReady(true);
 
       console.log(form.getFieldsValue());
-    } catch (err) {
-      console.error("Ошибка:", err);
+    } catch (err: any) {
+      const firstErrorField = err?.errorFields[0].name[0];
+      form.scrollToField(firstErrorField, {
+        behavior: "smooth",
+        block: "center",
+        focus: true,
+      });
     }
   };
 
@@ -172,7 +199,6 @@ export const Calculation: React.FC<{
                 >
                   <InputNumber
                     className="input"
-                    status={form.getFieldError("Tday").length ? "error" : ""}
                     decimalSeparator=","
                     value={Tday}
                     onChange={(value) => setTdayValue(value)}
@@ -194,7 +220,6 @@ export const Calculation: React.FC<{
                 >
                   <InputNumber
                     className="input"
-                    status={form.getFieldError("GS").length ? "error" : ""}
                     value={GS}
                     onChange={(value) => setGSValue(value)}
                   />
@@ -215,7 +240,6 @@ export const Calculation: React.FC<{
                 >
                   <InputNumber
                     className="input"
-                    status={form.getFieldError("Tl").length ? "error" : ""}
                     value={Tl}
                     onChange={(value) => setTlValue(value)}
                   />
@@ -236,7 +260,6 @@ export const Calculation: React.FC<{
                 >
                   <InputNumber
                     className="input"
-                    status={form.getFieldError("Tseason").length ? "error" : ""}
                     value={Tseason}
                     onChange={(value) => setTseasonValue(value)}
                   />
@@ -256,87 +279,83 @@ export const Calculation: React.FC<{
               slidesToShow={3}
               style={{ margin: "0 12%" }}
             >
-              <div>
-                <div
-                  style={{
-                    borderTop: "30px solid #83480D",
-                    width: "20vw",
-                    height: "fit-content",
-                    maxHeight: "35vh",
-                    backgroundColor: "#7BC47B",
-                    padding: "14px 14px 20vh 14px",
-                  }}
-                >
-                  <h3>День 1</h3>
-                  <ConfigProvider
-                    theme={{
-                      token: {
-                        fontSize: 16,
-                        fontFamily:
-                          "Gelasio, system-ui, Avenir, Helvetica, Arial, sans-serif",
-                        colorError: "#ef0004ff",
-                      },
-                      components: {
-                        InputNumber: {
-                          colorBgContainer: "#EDF4D7",
-                          colorBorder: "#83480D",
-                          hoverBorderColor: "#83480D",
-                          activeBorderColor: "#83480D",
-                          handleHoverColor: "#83480D",
-                          lineWidth: 3,
-                          colorErrorBorderHover: "#ef0004ff",
-                        },
-                      },
-                    }}
-                  >
-                    <Form.Item
-                      className="day-info"
-                      name="Td"
-                      label="Среднее время прохождения участка:"
-                      rules={[
-                        { required: true, message: "Обязательное поле!" },
-                        {
-                          type: "number",
-                          min: Number.EPSILON,
-                          max: Tday ? Tday : Number.EPSILON,
-                          message:
-                            "Среднее время прохождения не может быть меньше 0 / превышать время доступности маршрута.",
-                        },
-                      ]}
+              <Form.Item<FieldType> name="dayParametersList">
+                {Array.from({ length: Tl ? Tl : 0 }).map((_, index) => (
+                  <div key={index}>
+                    <div
+                      style={{
+                        borderTop: "30px solid #83480D",
+                        width: "20vw",
+                        height: "fit-content",
+                        maxHeight: "35vh",
+                        backgroundColor: "#7BC47B",
+                        padding: "14px 14px 20vh 14px",
+                      }}
                     >
-                      <InputNumber
-                        className="input"
-                        status={form.getFieldError("Td").length ? "error" : ""}
-                        decimalSeparator=","
-                        value={Td}
-                        onChange={(value) => setTdValue(value)}
-                      />
-                    </Form.Item>
+                      <h3>День {index + 1}</h3>
+                      <ConfigProvider
+                        theme={{
+                          token: {
+                            fontSize: 16,
+                            fontFamily:
+                              "Gelasio, system-ui, Avenir, Helvetica, Arial, sans-serif",
+                            colorError: "#ef0004ff",
+                          },
+                          components: {
+                            InputNumber: {
+                              colorBgContainer: "#EDF4D7",
+                              colorBorder: "#83480D",
+                              hoverBorderColor: "#83480D",
+                              activeBorderColor: "#83480D",
+                              handleHoverColor: "#83480D",
+                              lineWidth: 3,
+                              colorErrorBorderHover: "#ef0004ff",
+                            },
+                          },
+                        }}
+                      >
+                        <Form.Item
+                          className="day-info"
+                          label="Среднее время прохождения участка:"
+                          rules={[
+                            {
+                              required: true,
+                              message: "Обязательное поле!",
+                            },
+                            {
+                              type: "number",
+                              min: Number.EPSILON,
+                              message:
+                                "Среднее время прохождения не может быть меньше 0.",
+                            },
+                          ]}
+                        >
+                          <InputNumber className="input" decimalSeparator="," />
+                        </Form.Item>
 
-                    <Form.Item
-                      className="day-info"
-                      name="DT"
-                      label="Длина участка:"
-                      rules={[
-                        { required: true, message: "Обязательное поле!" },
-                        {
-                          type: "number",
-                          min: Number.EPSILON,
-                          message:
-                            "Введите длину маршрута в километрах (значение должно быть больше 0)",
-                        },
-                      ]}
-                    >
-                      <InputNumber
-                        className="input"
-                        status={form.getFieldError("DT").length ? "error" : ""}
-                        value={DT}
-                        onChange={(value) => setDTValue(value)}
-                      />
-                    </Form.Item>
-                  </ConfigProvider>
-                </div>
-              </div>
+                        <Form.Item
+                          className="day-info"
+                          label="Длина участка:"
+                          rules={[
+                            {
+                              required: true,
+                              message: "Обязательное поле!",
+                            },
+                            {
+                              type: "number",
+                              min: Number.EPSILON,
+                              message:
+                                "Введите длину маршрута в километрах (значение должно быть больше 0)",
+                            },
+                          ]}
+                        >
+                          <InputNumber className="input" />
+                        </Form.Item>
+                      </ConfigProvider>
+                    </div>
+                  </div>
+                ))}
+              </Form.Item>
             </Carousel>
           </div>
 
@@ -435,6 +454,7 @@ export const Calculation: React.FC<{
             <Form.Item style={{ textAlign: "center" }}>
               <Button
                 type="primary"
+                htmlType="submit"
                 onClick={ValidateForm}
                 style={{
                   backgroundColor: "#83480D",
@@ -452,7 +472,10 @@ export const Calculation: React.FC<{
         </Form>
 
         {isResultReady && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "7vh" }}>
+          <div
+            id="result"
+            style={{ display: "flex", flexDirection: "column", gap: "7vh" }}
+          >
             <h2 className="result-header">Результаты расчета</h2>
             <ConfigProvider
               theme={{
@@ -543,15 +566,68 @@ export const Calculation: React.FC<{
                 </div>
               )}
 
-              <div>
-                <h2 style={{ textAlign: "left", margin: "0 12%" }}>
-                  {ecologicalFactorsList.length > 0 ||
-                  managementFactorsList.length > 0
-                    ? "Прочие рекомендации"
-                    : "Рекомендации"}
-                </h2>
-              </div>
+              {(ecologicalFactorsList.length + managementFactorsList.length ===
+                0 ||
+                ecologicalFactorsList.length + managementFactorsList.length >
+                  5) && (
+                <div>
+                  <h2
+                    style={{
+                      textAlign: "left",
+                      margin: "0 12%",
+                      borderBottom: "5px solid #83480D",
+                      width: "fit-content",
+                    }}
+                  >
+                    {ecologicalFactorsList.length > 0 ||
+                    managementFactorsList.length > 0
+                      ? "Прочие рекомендации"
+                      : "Рекомендации"}
+                  </h2>
+                  {ecologicalFactorsList.length +
+                    managementFactorsList.length ===
+                    0 && (
+                    <p className="recomendation">
+                      Негативные факторы не выявлены. Рекомендации по управлению
+                      маршрутом не требуются.
+                    </p>
+                  )}
+                  {ecologicalFactorsList.length + managementFactorsList.length >
+                    5 && (
+                    <p className="recomendation">
+                      Зафиксировано значительное количество проблемных факторов.
+                      Рекомендуется снизить нагрузку и пересмотреть режим
+                      эксплуатации маршрута.
+                    </p>
+                  )}
+                </div>
+              )}
             </ConfigProvider>
+
+            <Button
+              type="primary"
+              onClick={() => {
+                const opt = {
+                  filename: "calculation-result.pdf",
+                  html2canvas: { scale: 2 },
+                  jsPDF: {
+                    orientation: "landscape",
+                  },
+                };
+
+                html2pdf(document.querySelector("#result") || document.body, opt);
+              }}
+              style={{
+                backgroundColor: "#83480D",
+                borderRadius: 15,
+                color: "#FFFFFF",
+                fontSize: 24,
+                fontWeight: 700,
+                padding: "30px 50px",
+              }}
+            >
+              Экспорт в .pdf
+            </Button>
           </div>
         )}
       </main>

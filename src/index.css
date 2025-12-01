@@ -4,6 +4,9 @@
   font-weight: 400;
 
   overflow-x: hidden;
+
+  scroll-behavior: smooth;
+  scroll-margin-top: 100px;
 }
 
 body {
@@ -83,7 +86,7 @@ button:focus-visible {
   margin-bottom: 10px !important;
 }
 
-.ant-input-number-status-error .ant-input-number-handler {
+.ant-input-number-status-error .ant-input-number-action {
   border-color: #ef0004ff !important;
 }
 
@@ -121,4 +124,20 @@ h3 {
   align-items: center;
   justify-content: center;
   gap: 40px;
+}
+
+.recomendation::before {
+  content: "•";
+  font-size: 60px;
+  color: #83480D !important;
+}
+
+.recomendation {
+  font-size: 20px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: left;
+  gap: 10px;
+  margin: 3vh 0 0 4%;
 }

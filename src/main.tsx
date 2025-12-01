@@ -4,7 +4,6 @@ import './index.css'
 import { BrowserRouter, Route, Routes } from "react-router";
 import { Calculation } from './calculation.tsx';
 import { ECOLOGICAL_FACTORS, MANAGEMENT_FACTORS } from './consts.ts';
-import '@ant-design/v5-patch-for-react-19';
 
 createRoot(document.getElementById('root')!).render(
   <BrowserRouter>
