@@ -81,6 +81,10 @@ button:focus-visible {
   margin-right: 10px !important;
 }
 
+.authorization-form .ant-form-item-required::before {
+  content: '' !important;
+}
+
 .ant-form-item-explain {
   font-size: 12px !important;
   margin-bottom: 10px !important;
@@ -144,4 +148,24 @@ h3 {
 
 .slick-arrow {
   color: #83480D !important;
+}
+
+.modal {
+  border: 7px solid #83480D;
+  border-radius: 30px;
+  background-color: #E6FFD7;
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px #7BC47B inset !important;
+}
+
+input:-moz-autofill,
+input:-moz-autofill:hover,
+input:-moz-autofill:focus,
+input:-moz-autofill:active {
+  box-shadow: 0 0 0 30px #7BC47B inset !important;
 }

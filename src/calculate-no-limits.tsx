@@ -10,10 +10,10 @@ import {
 import React, { useState } from "react";
 import type { Factor } from "./consts";
 import { CalculationResultColumns, FactorsResultColumns } from "./consts";
-import { Calculate } from "./utils";
+import { CalculateNoLimits } from "./utils";
 import html2pdf from "html2pdf.js";
 
-export const Calculation: React.FC<{
+export const CalculationNoLimits: React.FC<{
   ecologicalFactors: Factor[];
   managementFactors: Factor[];
 }> = React.memo(({ ecologicalFactors, managementFactors }) => {
@@ -42,7 +42,7 @@ export const Calculation: React.FC<{
   const ValidateForm = async () => {
     try {
       await form.validateFields();
-      const result = Calculate(
+      const result = CalculateNoLimits(
         Tday,
         GS,
         Tl,
@@ -59,13 +59,20 @@ export const Calculation: React.FC<{
       setIsResultReady(true);
 
       console.log(form.getFieldsValue());
-    } catch (err: any) {
-      const firstErrorField = err?.errorFields[0].name[0];
-      form.scrollToField(firstErrorField, {
-        behavior: "smooth",
-        block: "center",
-        focus: true,
-      });
+    } catch (err) {
+      console.log(err)
+      if (typeof err === "object" && err !== null && "errorFields" in err) {
+        const errorFields = err.errorFields as Array<{
+          name: string[];
+          errors: string[];
+        }>;
+        const firstErrorField = errorFields[0].name;
+        form.scrollToField(firstErrorField, {
+          behavior: "smooth",
+          block: "center",
+          focus: true,
+        });
+      }
     }
   };
 
@@ -87,8 +94,7 @@ export const Calculation: React.FC<{
             transform: "translate(-50%, 0%)",
           }}
         >
-          Рекреационная ёмкость однодневных и многодневных маршрутов с
-          фиксированным временем работы
+          Рекреационная ёмкость однодневных и многодневных туристских маршрутов без ограничения времени посещения
         </h1>
         <img src="calc-bg-img.png" />
       </div>
@@ -154,7 +160,7 @@ export const Calculation: React.FC<{
             >
               <Form.Item
                 name="Tday"
-                label="Время доступности  маршрута в сутки (в часах):"
+                label="Длина светового дня (в часах):"
                 rules={[
                   { required: true, message: "Обязательное поле!" },
                   {
@@ -253,103 +259,104 @@ export const Calculation: React.FC<{
             {() => {
               return (
                 <ConfigProvider
-  theme={{
-    components: {
-      Carousel: {
-        arrowOffset: -60,
-        arrowSize: 30,
-      },
-    },
-  }}
->
-                <Carousel
-                  arrows={dayParametersFields.length > 3}
-                  dots={false}
-                  draggable={dayParametersFields.length > 3}
-                  slidesToShow={Math.min(3, dayParametersFields.length)}
-                  style={{ margin: "0 12%" }}
+                  theme={{
+                    components: {
+                      Carousel: {
+                        arrowOffset: -60,
+                        arrowSize: 30,
+                      },
+                    },
+                  }}
                 >
-                  {dayParametersFields.map(({ key }, index) => (
-                    <div key={key}>
-                      <div
-                        style={{
-                          borderTop: "30px solid #83480D",
-                          width: "20vw",
-                          height: "fit-content",
-                          maxHeight: "35vh",
-                          backgroundColor: "#7BC47B",
-                          padding: "14px 14px 20vh 14px",
-                        }}
-                      >
-                        <h3>День {index + 1}</h3>
-                        <ConfigProvider
-                          theme={{
-                            token: {
-                              fontSize: 16,
-                              fontFamily:
-                                "Gelasio, system-ui, Avenir, Helvetica, Arial, sans-serif",
-                              colorError: "#ef0004ff",
-                            },
-                            components: {
-                              InputNumber: {
-                                colorBgContainer: "#EDF4D7",
-                                colorBorder: "#83480D",
-                                hoverBorderColor: "#83480D",
-                                activeBorderColor: "#83480D",
-                                handleHoverColor: "#83480D",
-                                lineWidth: 3,
-                                colorErrorBorderHover: "#ef0004ff",
-                              },
-                            },
+                  <Carousel
+                    arrows={dayParametersFields.length > 3}
+                    dots={false}
+                    draggable={dayParametersFields.length > 3}
+                    slidesToShow={Math.min(3, dayParametersFields.length)}
+                    style={{ margin: "0 12%" }}
+                  >
+                    {dayParametersFields.map(({ key }, index) => (
+                      <div key={key}>
+                        <div
+                          style={{
+                            borderTop: "30px solid #83480D",
+                            height: "fit-content",
+                            maxHeight: "35vh",
+                            backgroundColor: "#7BC47B",
+                            padding: "14px 14px 20vh 14px",
+                            margin: "0 auto",
+                            maxWidth: "20vw",
                           }}
                         >
-                          <Form.Item
-                            name={[key, "DT"]}
-                            className="day-info"
-                            label="Среднее время прохождения участка:"
-                            rules={[
-                              {
-                                required: true,
-                                message: "Обязательное поле!",
+                          <h3>День {index + 1}</h3>
+                          <ConfigProvider
+                            theme={{
+                              token: {
+                                fontSize: 16,
+                                fontFamily:
+                                  "Gelasio, system-ui, Avenir, Helvetica, Arial, sans-serif",
+                                colorError: "#ef0004ff",
                               },
-                              {
-                                type: "number",
-                                min: Number.EPSILON,
-                                message:
-                                  "Среднее время прохождения не может быть меньше 0.",
+                              components: {
+                                InputNumber: {
+                                  colorBgContainer: "#EDF4D7",
+                                  colorBorder: "#83480D",
+                                  hoverBorderColor: "#83480D",
+                                  activeBorderColor: "#83480D",
+                                  handleHoverColor: "#83480D",
+                                  lineWidth: 3,
+                                  colorErrorBorderHover: "#ef0004ff",
+                                },
                               },
-                            ]}
+                            }}
                           >
-                            <InputNumber
-                              className="input"
-                              decimalSeparator=","
-                            />
-                          </Form.Item>
+                            <Form.Item
+                              name={[key, "DT"]}
+                              className="day-info"
+                              label="Среднее время прохождения участка:"
+                              rules={[
+                                {
+                                  required: true,
+                                  message: "Обязательное поле!",
+                                },
+                                {
+                                  type: "number",
+                                  min: Number.EPSILON,
+                                  message:
+                                    "Среднее время прохождения не может быть меньше 0.",
+                                },
+                              ]}
+                            >
+                              <InputNumber
+                                className="input"
+                                decimalSeparator=","
+                              />
+                            </Form.Item>
 
-                          <Form.Item
-                            name={[key, "Td"]}
-                            className="day-info"
-                            label="Длина участка:"
-                            rules={[
-                              {
-                                required: true,
-                                message: "Обязательное поле!",
-                              },
-                              {
-                                type: "number",
-                                min: Number.EPSILON,
-                                message:
-                                  "Введите длину маршрута в километрах (значение должно быть больше 0)",
-                              },
-                            ]}
-                          >
-                            <InputNumber className="input" />
-                          </Form.Item>
-                        </ConfigProvider>
+                            <Form.Item
+                              name={[key, "Td"]}
+                              className="day-info"
+                              label="Длина участка:"
+                              rules={[
+                                {
+                                  required: true,
+                                  message: "Обязательное поле!",
+                                },
+                                {
+                                  type: "number",
+                                  min: Number.EPSILON,
+                                  message:
+                                    "Введите длину маршрута в километрах (значение должно быть больше 0)",
+                                },
+                              ]}
+                            >
+                              <InputNumber className="input" />
+                            </Form.Item>
+                          </ConfigProvider>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </Carousel>
+                    ))}
+                  </Carousel>
                 </ConfigProvider>
               );
             }}
@@ -605,32 +612,67 @@ export const Calculation: React.FC<{
             </ConfigProvider>
           </div>
 
-          <Button
-            type="primary"
-            onClick={() => {
-              const opt = {
-                filename: "calculation-result.pdf",
-                html2canvas: { scale: 2 },
-                jsPDF: {
-                  orientation: "landscape",
-                },
-              };
+          <div style={{ display: "flex", justifyContent: "center", gap: 50 }}>
+            <Button
+              type="primary"
+              onClick={() => {
+                const opt = {
+                  filename: "calculation-result.pdf",
+                  html2canvas: { scale: 2 },
+                  jsPDF: {
+                    orientation: "landscape" as "landscape" | "portrait",
+                  },
+                };
 
-              html2pdf(document.querySelector("#result") || document.body, opt);
-            }}
-            style={{
-              backgroundColor: "#83480D",
-              borderRadius: 15,
-              color: "#FFFFFF",
-              fontSize: 24,
-              fontWeight: 700,
-              padding: "30px 50px",
-              width: "fit-content",
-              margin: "0 auto 3vh auto",
-            }}
-          >
-            Экспорт в .pdf
-          </Button>
+                html2pdf(
+                  document.querySelector("#result") || document.body,
+                  opt
+                );
+              }}
+              style={{
+                backgroundColor: "#83480D",
+                borderRadius: 15,
+                color: "#FFFFFF",
+                fontSize: 24,
+                fontWeight: 700,
+                padding: "30px 50px",
+                width: "fit-content",
+                margin: "0 0 3vh 0",
+              }}
+            >
+              Экспорт в .pdf
+            </Button>
+            <Button
+              className="primary-button"
+              type="primary"
+              onClick={() => {
+                const opt = {
+                  filename: "calculation-result.pdf",
+                  html2canvas: { scale: 2 },
+                  jsPDF: {
+                    orientation: "landscape" as "landscape" | "portrait",
+                  },
+                };
+
+                html2pdf(
+                  document.querySelector("#result") || document.body,
+                  opt
+                );
+              }}
+              style={{
+                backgroundColor: "#83480D",
+                borderRadius: 15,
+                color: "#FFFFFF",
+                fontSize: 24,
+                fontWeight: 700,
+                padding: "30px 50px",
+                width: "fit-content",
+                margin: "0 0 3vh 0",
+              }}
+            >
+              Сохранить расчёт
+            </Button>
+          </div>
         </div>
       )}
     </main>
