@@ -5,7 +5,7 @@ import { NavLink } from "react-router";
 export const Header: React.FC = React.memo(() => {
   type MenuItem = Required<MenuProps>["items"][number];
 
-  const items: MenuItem[] = [
+  const calculationOptions: MenuItem[] = [
     {
       key: "menu-button",
       label: <img src="/menu-button.svg" />,
@@ -31,6 +31,33 @@ export const Header: React.FC = React.memo(() => {
     },
   ];
 
+  const profileOptions: MenuItem[] = [
+    {
+      key: "profile-menu-button",
+      label: (
+        <div style={{display: "flex", gap: "16px", fontWeight: 700, color: "#E2F4D7"}}>
+          <img src="/profile-icon.svg" />
+          <p>Мой профиль</p>
+        </div>
+      ),
+      popupOffset: [5, -8],
+      children: [
+        {
+          key: "saved-calculations",
+          label: <NavLink to="/saved-calculations">Мои расчеты</NavLink>,
+        },
+        {
+          key: "profile-settings",
+          label: <NavLink to="/profile-settings">Настройки</NavLink>,
+        },
+        {
+          key: "logout",
+          label: <NavLink to="/calculate-no-limits">Выход</NavLink>,
+        },
+      ],
+    },
+  ];
+
   return (
     <>
       <header
@@ -50,9 +77,10 @@ export const Header: React.FC = React.memo(() => {
           theme={{
             token: {
               borderRadius: 0,
-              fontFamily: "Gelasio, system-ui, Avenir, Helvetica, Arial, sans-serif",
+              fontFamily:
+                "Gelasio, system-ui, Avenir, Helvetica, Arial, sans-serif",
               fontSize: 16,
-              colorBorder: "red"
+              colorBorder: "red",
             },
             components: {
               Menu: {
@@ -68,28 +96,41 @@ export const Header: React.FC = React.memo(() => {
                 itemActiveBg: "#E2F4D7",
                 itemSelectedBg: "#E2F4D7",
                 itemSelectedColor: "#000000",
+                itemHoverBg: "#E2F4D7",
               },
             },
           }}
         >
-          <Menu style={{ width: 80, backgroundColor: "#83480D", border: "none" }} mode="horizontal" items={items} defaultSelectedKeys={["calculate-fixed-time"]}/>
+          <Menu
+            style={{ width: 80, backgroundColor: "#83480D", border: "none" }}
+            mode="horizontal"
+            items={calculationOptions}
+          />
+        {sessionStorage.getItem("token") ? (
+          <Menu
+            style={{ width: 200, backgroundColor: "#83480D", border: "none" }}
+            mode="horizontal"
+            items={profileOptions}
+          />
+        ) : (
+          <div style={{ display: "flex", gap: 10 }}>
+            <NavLink
+              to="/authorization"
+              className="header-button"
+              style={{ backgroundColor: "#E2F4D7" }}
+            >
+              Войти
+            </NavLink>
+            <NavLink
+              to="/registration"
+              className="header-button"
+              style={{ backgroundColor: "#7BC47B" }}
+            >
+              Зарегистрироваться
+            </NavLink>
+          </div>
+        )}
         </ConfigProvider>
-        <div style={{ display: "flex", gap: 10 }}>
-          <NavLink
-            to="/authorization"
-            className="header-button"
-            style={{ backgroundColor: "#E2F4D7" }}
-          >
-            Войти
-          </NavLink>
-          <NavLink
-            to="/registration"
-            className="header-button"
-            style={{ backgroundColor: "#7BC47B" }}
-          >
-            Зарегистрироваться
-          </NavLink>
-        </div>
       </header>
     </>
   );

@@ -1,13 +1,25 @@
 import { Button, ConfigProvider, Form, Input } from "antd";
-import React from "react";
+import React, { useState } from "react";
+import { useAuthorizationMutation } from "./fetch/authorize";
 
 export const Authorization: React.FC = React.memo(() => {
   const [form] = Form.useForm();
 
+  const [isFailed, setIsFailed] = useState(false);
+
+  const { mutateAsync: authorize, error } = useAuthorizationMutation(setIsFailed);
+
+  /*useEffect(() => {
+    sessionStorage.clear();
+  }, []);*/
+
   const ValidateForm = async () => {
     try {
       await form.validateFields();
-      console.log(form.getFieldsValue());
+      authorize({
+        email: form.getFieldValue("email"),
+        password: form.getFieldValue("password"),
+      });
     } catch (err) {
       if (typeof err === "object" && err !== null && "errorFields" in err) {
         const errorFields = err.errorFields as Array<{
@@ -109,6 +121,7 @@ export const Authorization: React.FC = React.memo(() => {
               >
                 Войти
               </Button>
+              {isFailed && <p>{error?.message}</p>}
             </div>
           </Form>
         </ConfigProvider>
